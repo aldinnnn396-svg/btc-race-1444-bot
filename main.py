@@ -76,6 +76,9 @@ def on_batch(state, batch):
     if pending:
         return []
 
+    if state.seq >= 1380:
+        return []
+
     ret_30 = ((closes[-1] - closes[-31]) * 10000) // closes[-31]
     ret_120 = ((closes[-1] - closes[-121]) * 10000) // closes[-121]
     in_downtrend = (ret_120 <= -80)
@@ -86,23 +89,13 @@ def on_batch(state, batch):
     var_240 = max(0, (sum_sq_close // 240) - (mean_240 * mean_240))
     std_240 = math.isqrt(var_240)
 
-    if ret_30 <= -80 and c > prev_close:
+    if ret_30 <= -40 and c > prev_close:
         pending = True
         pending_mode = "dip"
         return [{
             "side": "buy",
             "symbol": SYMBOL,
             "notional_quote_units": state.cash // 2,
-            "max_slippage_bps": 300
-        }]
-
-    if not in_downtrend and c <= (mean_240 - 2 * std_240):
-        pending = True
-        pending_mode = "mr"
-        return [{
-            "side": "buy",
-            "symbol": SYMBOL,
-            "notional_quote_units": state.cash,
             "max_slippage_bps": 300
         }]
 
